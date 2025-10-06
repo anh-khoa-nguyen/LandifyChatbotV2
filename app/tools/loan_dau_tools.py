@@ -8,7 +8,7 @@ from app.database.connection import query_to_dataframe
 logger = logging.getLogger(__name__)
 
 
-def get_the_dat_cat_tuong_info(keyword: str) -> Optional[Dict[str, Any]]:
+def get_the_dat_cat_tuong_info(keyword: str = None, ten_the_dat: str = None) -> Optional[Dict[str, Any]]:
     """
     Tìm thông tin về một thế đất tốt dựa vào keyword.
 
@@ -20,8 +20,14 @@ def get_the_dat_cat_tuong_info(keyword: str) -> Optional[Dict[str, Any]]:
     """
     logger.info(f"Đang tra cứu Thế đất Cát tường với keyword: '{keyword}'")
 
-    sql_query = "SELECT * FROM loan_dau_cat_tuong WHERE keywords_nhandien LIKE :keyword"
-    params = {"keyword": f"%{keyword}%"}
+    if ten_the_dat:
+        sql_query = "SELECT * FROM loan_dau_cat_tuong WHERE tenthedat = :ten_the_dat"
+        params = {"ten_the_dat": ten_the_dat}
+    elif keyword:
+        sql_query = "SELECT * FROM loan_dau_cat_tuong WHERE keywords_nhandien LIKE :keyword"
+        params = {"keyword": f"%{keyword}%"}
+    else:
+        return None
 
     try:
         result_df = query_to_dataframe(sql_query, params)
@@ -39,7 +45,7 @@ def get_the_dat_cat_tuong_info(keyword: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def get_sat_khi_info(keyword: str) -> Optional[Dict[str, Any]]:
+def get_sat_khi_info(keyword: str = None, ten_sat_khi: str = None) -> Optional[Dict[str, Any]]:
     """
     Tìm thông tin về một loại Sát khí ngoại cảnh dựa vào keyword.
 
@@ -51,8 +57,14 @@ def get_sat_khi_info(keyword: str) -> Optional[Dict[str, Any]]:
     """
     logger.info(f"Đang tra cứu Sát khí với keyword: '{keyword}'")
 
-    sql_query = "SELECT * FROM ngoai_canh_sat_khi WHERE keywords_nhandien LIKE :keyword"
-    params = {"keyword": f"%{keyword}%"}
+    if ten_sat_khi:
+        sql_query = "SELECT * FROM ngoai_canh_sat_khi WHERE tensatkhi = :ten_sat_khi"
+        params = {"ten_sat_khi": ten_sat_khi}
+    elif keyword:
+        sql_query = "SELECT * FROM ngoai_canh_sat_khi WHERE keywords_nhandien LIKE :keyword"
+        params = {"keyword": f"%{keyword}%"}
+    else:
+        return None
 
     try:
         result_df = query_to_dataframe(sql_query, params)

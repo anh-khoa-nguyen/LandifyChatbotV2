@@ -139,6 +139,11 @@ def format_context_for_prompt(context: ChatContext) -> str:
                 query_str = ", ".join([f"{v}" for k, v in entities.items()])
 
             data_lines.append(f"**THÔNG TIN TRA CỨU CHO: '{query_str}'**")
+            semantic_result = data.get('semantic_search_result')
+            if semantic_result and semantic_result.get('lookup_method') == 'semantic_search':
+                data_lines.append(
+                    f"**Lưu ý:** Dựa trên mô tả của người dùng, hệ thống đã suy luận ra đây là **'{semantic_result.get('name')}'** với độ tương đồng là {semantic_result.get('similarity_score'):.0%}.")
+
             lookup_result = data.get('lookup_result')
             if context.lookup_result:
                 data_lines.append("Dưới đây là dữ liệu thô tìm được từ cơ sở dữ liệu:")
