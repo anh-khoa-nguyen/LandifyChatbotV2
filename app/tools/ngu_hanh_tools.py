@@ -6,6 +6,7 @@ from typing import Optional, Dict, Any
 
 # Import hàm query tiện ích từ module database
 from app.database.connection import query_to_dataframe
+from app.tools import can_chi_helper
 
 logger = logging.getLogger(__name__)
 
@@ -85,39 +86,42 @@ def get_menh_info(menh: str) -> Optional[Dict[str, Any]]:
 
 
 def get_nap_am_info(nam_sinh: int) -> Optional[Dict[str, Any]]:
-    """
-    Tra cứu Nạp Âm và Mệnh Ngũ Hành từ bảng 'nap_am' dựa trên năm sinh.
-    Lưu ý: Bảng này có thể cần được thiết kế lại tốt hơn, hiện tại đang giả định
-    bảng `nap_am` có cột `cac_nam_sinh_vi_du` chứa các năm.
+        """
+        Tra cứu Nạp Âm và Mệnh Ngũ Hành từ bảng 'nap_am' dựa trên năm sinh.
+        Lưu ý: Bảng này có thể cần được thiết kế lại tốt hơn, hiện tại đang giả định
+        bảng `nap_am` có cột `cac_nam_sinh_vi_du` chứa các năm.
 
-    Args:
-        nam_sinh: Năm sinh âm lịch.
+        Args:
+            nam_sinh: Năm sinh âm lịch.
 
-    Returns:
-        Một dictionary chứa thông tin Nạp Âm, hoặc None nếu không tìm thấy.
-    """
-    logger.info(f"Đang tra cứu Nạp Âm cho năm sinh: {nam_sinh}")
+        Returns:
+            Một dictionary chứa thông tin Nạp Âm, hoặc None nếu không tìm thấy.
+        """
+        logger.info(f"Đang tra cứu Nạp Âm (logic tính toán) cho năm sinh: {nam_sinh}")
 
-    # Câu lệnh này tìm kiếm trong cột 'cac_nam_sinh_vi_du'
-    # LIKE '%value%' là một cách tìm kiếm chuỗi con, không hiệu quả lắm nhưng
-    # phù hợp với cấu trúc dữ liệu hiện tại.
-    # Một CSDL tốt hơn sẽ có bảng map Năm Sinh -> Nạp Âm ID.
-    sql_query = "SELECT * FROM nap_am WHERE cacnamsinh_vidu LIKE :nam_sinh_pattern"
-    params = {"nam_sinh_pattern": f"%{nam_sinh}%"}
-
-    try:
-        result_df = query_to_dataframe(sql_query, params)
-        if result_df.empty:
-            logger.warning(f"Không tìm thấy Nạp Âm cho năm sinh {nam_sinh}.")
+        can_chi = can_chi_helper.get_can_chi_from_year(nam_sinh)
+        if not can_chi:
+            logger.warning(f"Không thể tính toán Can Chi cho năm {nam_sinh}.")
             return None
+        logger.info(f"Năm {nam_sinh} tương ứng với Can Chi: '{can_chi}'")
 
-        nap_am_info = result_df.to_dict('records')[0]
-        logger.info(f"Tìm thấy Nạp Âm: {nap_am_info.get('tennapam')}")
-        return nap_am_info
+        sql_query = "SELECT * FROM nap_am WHERE canchi_tuongung LIKE :can_chi_pattern"
+        params = {"can_chi_pattern": f"%{can_chi}%"}
 
-    except Exception as e:
-        logger.error(f"Lỗi khi tra cứu Nạp Âm: {e}")
-        return None
+        try:
+            result_df = query_to_dataframe(sql_query, params)
+            if result_df.empty:
+                logger.warning(f"Không tìm thấy Nạp Âm nào tương ứng với Can Chi '{can_chi}' trong CSDL.")
+                return None
+
+            # Trả về kết quả đầu tiên tìm được (chắc chắn chỉ có 1)
+            nap_am_info = result_df.to_dict('records')[0]
+            logger.info(f"Tìm thấy Nạp Âm: {nap_am_info.get('tennapam')}")
+            return nap_am_info
+
+        except Exception as e:
+            logger.error(f"Lỗi trong quá trình tra cứu Nạp Âm bằng logic tính toán: {e}")
+            return None
 
 
 # --- Phần kiểm tra (chạy trực tiếp file này để test) ---
@@ -140,11 +144,19 @@ if __name__ == '__main__':
     else:
         print("  - Không tìm thấy kết quả.")
 
-    print("\n[Test 3] Tra cứu Nạp Âm cho năm 1990:")
+    print("\n[Test 3 - Logic mới] Tra cứu Nạp Âm cho năm 1990:")
     nap_am_result = get_nap_am_info(1990)
     if nap_am_result:
-        print(f"  - Tên Nạp Âm: {nap_am_result.get('tennapam')}")
+        print(f"  - Tên Nạp Âm: {nap_am_result.get('tennapam')}")  # Mong đợi Lộ Bàng Thổ
         print(f"  - Diễn giải hình tượng: {nap_am_result.get('diengiai_hinhtuong')}")
+    else:
+        print("  - Không tìm thấy kết quả.")
+
+    print("\n[Test 4 - Logic mới] Tra cứu Nạp Âm cho năm 2030 (không có trong ví dụ):")
+    nap_am_result_new = get_nap_am_info(2030)
+    if nap_am_result_new:
+        print(f"  - Tên Nạp Âm: {nap_am_result_new.get('tennapam')}")  # Mong đợi Canh Tuất - Thoa Xuyến Kim
+        print(f"  - Diễn giải hình tượng: {nap_am_result_new.get('diengiai_hinhtuong')}")
     else:
         print("  - Không tìm thấy kết quả.")
 
