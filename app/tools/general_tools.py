@@ -39,31 +39,36 @@ def get_huong_info(ten_huong: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def get_vat_pham_info(ten_vat_pham: str) -> Optional[Dict[str, Any]]:
+def get_vat_pham_info(keyword: str = None, ten_vat_pham: str = None) -> Optional[Dict[str, Any]]:
     """
-    Tra cứu thông tin chi tiết về một vật phẩm phong thủy từ bảng 'vat_pham_phong_thuy'.
-
-    Args:
-        ten_vat_pham: Tên của vật phẩm (ví dụ: "Tỳ Hưu", "Gương Bát Quái").
-
-    Returns:
-        Một dictionary chứa thông tin chi tiết về vật phẩm, hoặc None nếu không tìm thấy.
+    Tra cứu thông tin chi tiết về một vật phẩm phong thủy.
+    Ưu tiên tìm kiếm theo tên chính xác (ten_vat_pham), nếu không có sẽ tìm theo keyword (LIKE).
     """
-    logger.info(f"Đang tra cứu thông tin cho Vật phẩm: {ten_vat_pham}")
-    vat_pham_normalized = ten_vat_pham.strip().title()
+    if not ten_vat_pham and not keyword:
+        logger.warning("get_vat_pham_info được gọi mà không có tham số.")
+        return None
 
-    # Tìm kiếm linh hoạt hơn, ví dụ người dùng gõ "ty huu" vẫn ra "Tỳ Hưu"
-    sql_query = "SELECT * FROM vat_pham_phong_thuy WHERE tenvatpham LIKE :ten_vat_pham"
-    params = {"ten_vat_pham": f"%{vat_pham_normalized}%"}
+    if ten_vat_pham:
+        # --- Ưu tiên tìm kiếm chính xác theo tên ---
+        logger.info(f"Đang tra cứu vật phẩm theo tên chính xác: '{ten_vat_pham}'")
+        sql_query = "SELECT * FROM vat_pham_phong_thuy WHERE tenvatpham = :ten_vat_pham"
+        params = {"ten_vat_pham": ten_vat_pham.strip().title()}
+    else:
+        # --- Phương án dự phòng: tìm kiếm tương đối theo keyword ---
+        logger.info(f"Đang tra cứu vật phẩm theo keyword (LIKE): '{keyword}'")
+        # Tìm kiếm linh hoạt hơn, ví dụ người dùng gõ "ty huu" vẫn ra "Tỳ Hưu"
+        sql_query = "SELECT * FROM vat_pham_phong_thuy WHERE tenvatpham LIKE :keyword"
+        params = {"keyword": f"%{keyword.strip().title()}%"}
 
     try:
         result_df = query_to_dataframe(sql_query, params)
         if result_df.empty:
-            logger.warning(f"Không tìm thấy thông tin cho Vật phẩm '{vat_pham_normalized}'.")
+            logger.warning(f"Không tìm thấy thông tin vật phẩm với params: {params}.")
             return None
 
+        # Trả về kết quả đầu tiên tìm được
         vat_pham_info = result_df.to_dict('records')[0]
-        logger.info(f"Đã lấy thông tin thành công cho Vật phẩm {vat_pham_normalized}.")
+        logger.info(f"Đã lấy thông tin thành công cho vật phẩm: {vat_pham_info.get('tenvatpham')}")
         return vat_pham_info
 
     except Exception as e:
@@ -74,13 +79,8 @@ def get_vat_pham_info(ten_vat_pham: str) -> Optional[Dict[str, Any]]:
 def get_phi_tinh_info(nam: int) -> Optional[Dict[str, Any]]:
     """
     Tra cứu thông tin phi tinh lưu niên từ bảng 'phi_tinh_luu_nien'.
-
-    Args:
-        nam: Năm dương lịch cần tra cứu.
-
-    Returns:
-        Một dictionary chứa thông tin phi tinh của năm đó, hoặc None nếu không tìm thấy.
     """
+    # ... (Giữ nguyên code của hàm này)
     logger.info(f"Đang tra cứu Phi tinh cho năm: {nam}")
 
     sql_query = "SELECT * FROM phi_tinh_luu_nien WHERE nam_duonglich = :nam"

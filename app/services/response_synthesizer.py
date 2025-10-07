@@ -134,23 +134,29 @@ def format_context_for_prompt(context: ChatContext) -> str:
 
         case "LOOKUP_ITEM" | "LOOKUP_LOANDAU" | "LOOKUP_NAMSINH":
             query_str = ""
-            entities = context.initial_entities.model_dump(exclude_unset=True, exclude_none=True)
-            if entities:
-                query_str = ", ".join([f"{v}" for k, v in entities.items()])
+            entities_dict = context.initial_entities.model_dump(exclude_unset=True, exclude_none=True)
+            if entities_dict:
+                # Lấy giá trị đầu tiên trong dict entities làm query string
+                query_str = next(iter(entities_dict.values()))
 
             data_lines.append(f"**THÔNG TIN TRA CỨU CHO: '{query_str}'**")
-            semantic_result = data.get('semantic_search_result')
-            if semantic_result and semantic_result.get('lookup_method') == 'semantic_search':
+            semantic_result = context.workflow_data.get('semantic_search_result')
+            if semantic_result and semantic_result.get('lookup_method'):
+                inferred_name = semantic_result.get('name')
+                similarity = semantic_result.get('similarity_score', 0)
                 data_lines.append(
-                    f"**Lưu ý:** Dựa trên mô tả của người dùng, hệ thống đã suy luận ra đây là **'{semantic_result.get('name')}'** với độ tương đồng là {semantic_result.get('similarity_score'):.0%}.")
+                    f"**Lưu ý:** Dựa trên mô tả của bạn, hệ thống đã suy luận ra đây là **'{inferred_name}'** (độ tương đồng: {similarity:.0%})."
+                )
 
-            lookup_result = data.get('lookup_result')
-            if context.lookup_result:
-                data_lines.append("Dưới đây là dữ liệu thô tìm được từ cơ sở dữ liệu:")
-                json_data = {k: v for k, v in context.lookup_result.items() if
-                             v is not None and str(v).strip() not in ['', 'nan', '(null)']}
+            lookup_result = context.lookup_result  # Sửa lại để lấy từ context chính
+            if lookup_result:
+                data_lines.append("Dưới đây là dữ liệu chi tiết tìm được từ cơ sở dữ liệu:")
+                # Chuyển đổi dict thành chuỗi JSON đẹp mắt để LLM đọc
+                json_data = {k: v for k, v in lookup_result.items() if
+                             v is not None and str(v).strip().lower() not in ['', 'nan', '(null)']}
                 data_lines.append(json.dumps(json_data, indent=2, ensure_ascii=False))
             else:
+                # Câu trả lời này sẽ không được dùng nếu workflow đã set direct_response
                 data_lines.append("- Không tìm thấy thông tin phù hợp trong cơ sở dữ liệu.")
 
         case _:
