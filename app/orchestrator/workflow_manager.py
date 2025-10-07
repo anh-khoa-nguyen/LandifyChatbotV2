@@ -26,7 +26,7 @@ WORKFLOW_MAPPING = {
 }
 
 
-async def _preprocess_entities(entities):
+async def preprocess_entities(entities):
     """Tiền xử lý entities để giải mã các alias về năm sinh."""
     # Xử lý cho người thứ nhất
     if not entities.nam_sinh_1 and entities.nam_sinh_alias:
@@ -61,8 +61,6 @@ async def run_workflow(intent_result: IntentResult) -> ChatContext:
     Returns:
         Đối tượng ChatContext đã được làm giàu thông tin sau khi workflow chạy xong.
     """
-    intent_result.entities = await _preprocess_entities(intent_result.entities)
-
     intent_name = intent_result.intent
     initial_entities = intent_result.entities
 
