@@ -24,6 +24,7 @@ Trường "entities" là một đối tượng JSON chứa các thông tin bạn
 - "huong_nha": Hướng nhà (ví dụ: "Đông Bắc", "Tây Nam").
 - "vat_pham": Tên vật phẩm phong thủy.
 - "keyword_loandau": Từ khóa mô tả ngoại cảnh.
+- "nam_sinh_alias": Các cách gọi khác của năm sinh (ví dụ: "Bính Dần", "tuổi chuột", "91").
 
 QUY TẮC:
 1. Chỉ trả về JSON. Không thêm ```json``` hay bất kỳ văn bản nào khác.
@@ -48,6 +49,15 @@ AI: {{"intent": "LOOKUP_LOANDAU", "entities": {{"keyword_loandau": "khúc cua đ
 ---
 User: 1995 là mệnh gì
 AI: {{"intent": "LOOKUP_NAMSINH", "entities": {{"nam_sinh_1": 1995}}}}
+---
+User: xem mệnh cho tuổi Bính Dần
+AI: {{"intent": "LOOKUP_NAMSINH", "entities": {{"nam_sinh_alias": "Bính Dần"}}}}
+---
+User: nữ 91 hợp hướng nào
+AI: {{"intent": "ANALYZE_HOUSE", "entities": {{"gioi_tinh_1": "Nữ", "nam_sinh_alias": "91"}}}}
+---
+User: người tuổi cọp thì sao
+AI: {{"intent": "LOOKUP_NAMSINH", "entities": {{"nam_sinh_alias": "cọp"}}}}
 ---
 User: Chào bạn
 AI: {{"intent": "GREETING", "entities": {{}}}}

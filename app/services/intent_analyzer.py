@@ -22,6 +22,7 @@ class ExtractedEntities(BaseModel):
     huong_nha: str | None = None
     vat_pham: str | None = None
     keyword_loandau: str | None = None
+    nam_sinh_alias: str | None = None
 
 
 class IntentResult(BaseModel):

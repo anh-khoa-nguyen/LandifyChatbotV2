@@ -10,6 +10,7 @@ from app.orchestrator.workflows.compare_people import ComparePeopleWorkflow
 from app.orchestrator.workflows.lookup_item import LookupItemWorkflow
 from app.orchestrator.workflows.lookup_loandau import LookupLoanDauWorkflow
 from app.orchestrator.workflows.lookup_namsinh import LookupNamSinhWorkflow
+from app.tools import can_chi_helper
 
 # ... import các workflow khác ở đây khi bạn tạo chúng (ví dụ: ComparePeopleWorkflow)
 
@@ -25,6 +26,31 @@ WORKFLOW_MAPPING = {
 }
 
 
+async def _preprocess_entities(entities):
+    """Tiền xử lý entities để giải mã các alias về năm sinh."""
+    # Xử lý cho người thứ nhất
+    if not entities.nam_sinh_1 and entities.nam_sinh_alias:
+        logger.info(f"Tiền xử lý: Đang giải mã alias người 1: '{entities.nam_sinh_alias}'")
+        resolved_year = can_chi_helper.resolve_alias_to_year(entities.nam_sinh_alias)
+        if resolved_year:
+            entities.nam_sinh_1 = resolved_year
+            logger.info(f"Tiền xử lý: Giải mã thành công -> {resolved_year}")
+
+    # Xử lý cho người thứ hai (cho intent COMPARE_PEOPLE)
+    if not entities.nam_sinh_2 and hasattr(entities, 'nam_sinh_alias_2'):  # Giả sử có alias_2
+        # Tương tự logic trên cho người 2
+        pass
+
+    # Xử lý trường hợp LLM trả về năm 2 chữ số (ví dụ: 91)
+    if entities.nam_sinh_1 and 0 < entities.nam_sinh_1 < 100:
+        logger.info(f"Tiền xử lý: Đang giải mã năm 2 chữ số: '{entities.nam_sinh_1}'")
+        resolved_year = can_chi_helper.resolve_alias_to_year(entities.nam_sinh_1)
+        if resolved_year:
+            entities.nam_sinh_1 = resolved_year
+            logger.info(f"Tiền xử lý: Giải mã thành công -> {resolved_year}")
+
+    return entities
+
 async def run_workflow(intent_result: IntentResult) -> ChatContext:
     """
     Chọn và thực thi workflow phù hợp dựa trên intent đã được phân tích.
@@ -35,6 +61,8 @@ async def run_workflow(intent_result: IntentResult) -> ChatContext:
     Returns:
         Đối tượng ChatContext đã được làm giàu thông tin sau khi workflow chạy xong.
     """
+    intent_result.entities = await _preprocess_entities(intent_result.entities)
+
     intent_name = intent_result.intent
     initial_entities = intent_result.entities
 
