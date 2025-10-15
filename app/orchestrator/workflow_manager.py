@@ -29,16 +29,20 @@ WORKFLOW_MAPPING = {
 async def preprocess_entities(entities):
     """Tiền xử lý entities để giải mã các alias về năm sinh."""
     # Xử lý cho người thứ nhất
-    if not entities.nam_sinh_1 and entities.nam_sinh_alias:
-        logger.info(f"Tiền xử lý: Đang giải mã alias người 1: '{entities.nam_sinh_alias}'")
-        resolved_year = can_chi_helper.resolve_alias_to_year(entities.nam_sinh_alias)
+    if not entities.nam_sinh_1 and entities.nam_sinh_alias_1:
+        logger.info(f"Tiền xử lý: Đang giải mã alias người 1: '{entities.nam_sinh_alias_1}'")
+        resolved_year = can_chi_helper.resolve_alias_to_year(entities.nam_sinh_alias_1)
         if resolved_year:
             entities.nam_sinh_1 = resolved_year
             logger.info(f"Tiền xử lý: Giải mã thành công -> {resolved_year}")
 
     # Xử lý cho người thứ hai (cho intent COMPARE_PEOPLE)
-    if not entities.nam_sinh_2 and hasattr(entities, 'nam_sinh_alias_2'):  # Giả sử có alias_2
-        # Tương tự logic trên cho người 2
+    if not entities.nam_sinh_2 and entities.nam_sinh_alias_2:
+        logger.info(f"Tiền xử lý: Đang giải mã alias người 2: '{entities.nam_sinh_alias_2}'")
+        resolved_year = can_chi_helper.resolve_alias_to_year(entities.nam_sinh_alias_2)
+        if resolved_year:
+            entities.nam_sinh_2 = resolved_year
+            logger.info(f"Tiền xử lý: Giải mã thành công -> {resolved_year}")
         pass
 
     # Xử lý trường hợp LLM trả về năm 2 chữ số (ví dụ: 91)

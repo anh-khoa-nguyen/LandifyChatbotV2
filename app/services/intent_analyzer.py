@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 class ExtractedEntities(BaseModel):
     nam_sinh_1: int | None = None
     gioi_tinh_1: str | None = None
+    nam_sinh_alias_1: str | None = None
     nam_sinh_2: int | None = None
     gioi_tinh_2: str | None = None
+    nam_sinh_alias_2: str | None = None
     huong_nha: str | None = None
     vat_pham: str | None = None
     keyword_loandau: str | None = None

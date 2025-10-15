@@ -3,7 +3,7 @@ import pickle
 import os
 import logging
 from sentence_transformers import SentenceTransformer
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 logger = logging.getLogger(__name__)
 
@@ -71,40 +71,37 @@ except Exception as e:
         f"LỖI NGHIÊM TRỌNG: Không thể tải mô hình embedding chính. Các tool semantic search sẽ thất bại. Lỗi: {e}")
 
 
-def find_most_similar_loandau(query: str, similarity_threshold: float = 0.5) -> Optional[Dict[str, Any]]:
+def find_most_similar_loandau(query: str, k: int = 3, similarity_threshold: float = 0.5) -> List[Dict[str, Any]]:
     """
-    Tìm kiếm Sát Khí hoặc Thế Đất Cát Tường tương đồng nhất với mô tả của người dùng.
+    Tìm kiếm Top K Sát Khí hoặc Thế Đất Cát Tường tương đồng nhất.
     """
     if not LOANDAU_RESOURCES_LOADED or model is None:
         logger.error("Tài nguyên Loan Đầu chưa được tải, không thể thực hiện tìm kiếm.")
-        return None
+        return []
 
-    logger.info(f"Đang thực hiện semantic search (Loan Đầu) cho query: '{query}'")
+    logger.info(f"Đang thực hiện semantic search (Loan Đầu) cho query: '{query}' với K={k}")
 
     query_embedding = model.encode(query, convert_to_numpy=True).reshape(1, -1)
     faiss.normalize_L2(query_embedding)
 
-    similarity_scores, indices = loandau_index.search(query_embedding, k=1)
+    # Tìm kiếm K kết quả gần nhất
+    similarity_scores, indices = loandau_index.search(query_embedding, k=k)
 
-    best_match_index = indices[0][0]
-    similarity = similarity_scores[0][0]
+    results = []
+    for i in range(k):
+        idx = indices[0][i]
+        similarity = similarity_scores[0][i]
 
-    logger.info(
-        f"Tìm thấy kết quả (Loan Đầu) gần nhất ở index {best_match_index} với Cosine Similarity: {similarity:.2f}")
+        if similarity >= similarity_threshold:
+            match_info = loandau_info[idx].copy()
+            match_info['similarity_score'] = float(similarity)
+            results.append(match_info)
+            logger.info(f"  - Tìm thấy ứng viên: {match_info['name']} (Score: {similarity:.2f})")
 
-    if similarity < similarity_threshold:
-        logger.warning(f"Độ tương đồng ({similarity:.2f}) thấp hơn ngưỡng ({similarity_threshold}). Bỏ qua kết quả.")
-        return None
-
-    best_match_info = loandau_info[best_match_index].copy()  # Dùng copy() để tránh thay đổi dict gốc
-    best_match_info['similarity_score'] = float(similarity)
-    best_match_info['lookup_method'] = 'cosine_similarity'
-
-    return best_match_info
-
+    return results
 
 # --- TOOL MỚI BẠN YÊU CẦU ---
-def find_most_similar_item(query: str, similarity_threshold: float = 0.5) -> Optional[Dict[str, Any]]:
+def find_most_similar_item(query: str, similarity_threshold: float = 0.1) -> Optional[Dict[str, Any]]:
     """
     Tìm kiếm Vật phẩm phong thủy tương đồng nhất với mô tả hoặc tên gọi khác của người dùng.
 

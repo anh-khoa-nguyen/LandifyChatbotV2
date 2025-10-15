@@ -41,6 +41,9 @@ AI: {{"intent": "ANALYZE_HOUSE", "entities": {{"nam_sinh_1": 1990, "gioi_tinh_1"
 User: Chồng 1988 vợ 1991 thì sao bạn?
 AI: {{"intent": "COMPARE_PEOPLE", "entities": {{"nam_sinh_1": 1988, "gioi_tinh_1": "Nam", "nam_sinh_2": 1991, "gioi_tinh_2": "Nữ"}}}}
 ---
+User: xem tuổi chồng 88 vợ tân mùi
+AI: {{"intent": "COMPARE_PEOPLE", "entities": {{"nam_sinh_alias_1": "88", "gioi_tinh_1": "Nam", "nam_sinh_alias_2": "tân mùi", "gioi_tinh_2": "Nữ"}}}}
+---
 User: Tỳ hưu có tác dụng gì?
 AI: {{"intent": "LOOKUP_ITEM", "entities": {{"vat_pham": "Tỳ Hưu"}}}}
 ---
